@@ -42,7 +42,7 @@ q - quit
 
 . - comment out the next letter
 
-functions
+functions - not yet implemented
 d - define
 D - end definiton
 r - return

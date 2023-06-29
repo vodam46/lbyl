@@ -1,0 +1,20 @@
+lbyl interpreter
+
+lbyl - "Letter BY Letter" - is a minimal "turing tarpit" language, with
+arbitrarily many stacks - as many as python supports characteres in fact.
+
+design choices described in design
+
+usage:
+
+execute a line of text
+python main.py
+./main.py
+
+run code from a file
+python main.py file
+./main.py file
+
+debug mode
+python main.py file -d
+./main.py main.py file -d
