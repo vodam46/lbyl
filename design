@@ -40,7 +40,7 @@ gn - goto n
 
 q - quit
 
-# comment out the next letter
+. - comment out the next letter
 
 functions
 d - define

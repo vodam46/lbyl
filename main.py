@@ -6,6 +6,7 @@ move all repeatable logic into functions
 rewrite in C
 get EOF for input
 fix while loops
+typehint everything
 
 unified design choices
  - always pop
@@ -21,7 +22,7 @@ implemented commands:
 	wW
 	fF
 	g
-	#
+	.
 
 not implemented commands:
 	dDrc
@@ -54,7 +55,7 @@ ops: dict[str,tuple[Callable,int]] = {
 	'f': (noop, 1),
 	'F': (noop, 0),
 	'g': (noop, 1),
-	'#': (noop, 1),
+	'.': (noop, 1),
 }
 
 jumps: dict[int,int] = {}
@@ -150,7 +151,7 @@ if __name__ == "__main__":
 			# noop
 			case c if c in 'F':
 				pass
-			case '#':
+			case '.':
 				pass
 
 			case _:
