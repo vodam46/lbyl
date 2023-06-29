@@ -24,7 +24,7 @@ not implemented commands:
 	dDrc
 """
 
-from sys import argv
+from sys import argv, stdin
 import operator
 from typing import Callable
 
@@ -51,6 +51,7 @@ ops: dict[str,tuple[Callable,int]] = {
 	'f': (noop, 1),
 	'F': (noop, 0),
 	'g': (noop, 1),
+	'#': (noop, 1),
 }
 
 jumps: dict[int,int] = {}
@@ -113,15 +114,17 @@ if __name__ == "__main__":
 
 			# output
 			case c if c in "oO":
-				print(end=ops[c][0](expr_eval(s[in_ptr+1])))
+				print(ops[c][0](expr_eval(s[in_ptr+1])), end="")
 
 			# input
 			case 'i':
 				if input_str == "":
-					input_str = input()+"\n"
-				
-				stack_push('\"', ord(input_str[0]))
-				input_str = input_str[1:]
+					input_str = stdin.readline()
+				if input_str != "":
+					stack_push('\"', ord(input_str[0]))
+					input_str = input_str[1:]
+				else:
+					stack_push('\"', 0)
 
 			# while loops, and if
 			case c if c in 'wf':
@@ -140,6 +143,8 @@ if __name__ == "__main__":
 
 			# noop
 			case c if c in 'F':
+				pass
+			case '#':
 				pass
 
 			case _:
