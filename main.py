@@ -1,9 +1,11 @@
+#!/usr/bin/env python
 """"
 TODO
 rename commands
 move all repeatable logic into functions
 rewrite in C
 get EOF for input
+fix while loops
 
 unified design choices
  - always pop
@@ -19,6 +21,7 @@ implemented commands:
 	wW
 	fF
 	g
+	#
 
 not implemented commands:
 	dDrc
@@ -74,7 +77,7 @@ def parse(s):
 			if_arr.append(i)
 		elif c == 'F':
 			jump = if_arr.pop()
-			jumps[jump] = i
+			jumps[jump] = i-1
 		i += ops[c][1]+1
 	return s
 
@@ -99,10 +102,13 @@ if __name__ == "__main__":
 	
 		
 	s = parse(s)
+	if "-d" in argv:
+		print(s)
 
 	while in_ptr < len(s):
 		c = s[in_ptr]
-		# print(s[in_ptr:in_ptr+ops[c][1]+1], stacks)
+		if "-d" in argv:
+			print(c,s[in_ptr:in_ptr+ops[c][1]+1],stacks)
 		match c:
 			# operators
 			case c if c in "+-*/":

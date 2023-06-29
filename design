@@ -40,6 +40,8 @@ gn - goto n
 
 q - quit
 
+# comment out the next letter
+
 functions
 d - define
 D - end definiton
