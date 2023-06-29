@@ -2,17 +2,8 @@
 """"
 TODO
 rename commands
-move all repeatable logic into functions
-- expr as function input
 rewrite in C
-get EOF for input
-fix while loops
 typehint everything
-test script
-
-unified design choices
- - always pop
-
 
 implemented commands:
 	pP
@@ -57,7 +48,7 @@ def parse(s):
 		elif c == 'W':
 			jump = while_arr.pop()
 			jumps[jump] = i
-			jumps[i] = jump
+			jumps[i] = jump - ops[c][1]-1
 		elif c == 'f':
 			if_arr.append(i)
 		elif c == 'F':
@@ -72,10 +63,12 @@ def stack_push(num,stack): # expr: str
 	stacks[stack].append(num)
 
 def expr_eval(expr: str):
-	if expr[1] not in "0123456789":
-		out = int(stacks[expr[1]].pop())
+	if "-d" in argv:
+		print("expr:",expr)
+	if expr not in "0123456789":
+		out = int(stacks[expr].pop())
 	else:
-		out = int(expr[1])
+		out = int(expr)
 	return out
 
 def input_func(expr: str):
@@ -88,26 +81,32 @@ def input_func(expr: str):
 	else:
 		stacks["\""].append(0)
 
+def cond_jump(cond, expr):
+	global in_ptr
+	if cond(expr_eval(expr[1])):
+		in_ptr = jumps[in_ptr]
+
 def goto(expr: str):
 	global in_ptr
-	in_ptr = expr_eval(expr)
+	in_ptr = expr_eval(expr[1])
 
 ops: dict[str,tuple[Callable,int]] = {
-	'+': (operator.add,2),
-	'-': (operator.sub,2),
-	'*': (operator.mul,2),
-	'/': (operator.truediv,2),
-	'o': (lambda expr: print(chr(expr_eval(expr)),end=""),1),
-	'O': (lambda expr: print(int(expr_eval(expr)),end=""),1),
-	'p': (lambda expr:stacks[expr[0]][-1],2),
-	'P': (lambda expr:stacks[expr[0]].pop(),2),
+	'+': (lambda expr: stacks['\"'].append(expr_eval(expr[1])+expr_eval(expr[2])),2),
+	'-': (lambda expr: stacks['\"'].append(expr_eval(expr[1])-expr_eval(expr[2])),2),
+	'*': (lambda expr: stacks['\"'].append(expr_eval(expr[1])*expr_eval(expr[2])),2),
+	'/': (lambda expr: stacks['\"'].append(int(expr_eval(expr[1])/expr_eval(expr[2]))),2),
+	'o': (lambda expr: print(chr(expr_eval(expr[1])),end=""),1),
+	'O': (lambda expr: print(int(expr_eval(expr[1])),end=""),1),
+	'p': (lambda expr: stack_push(stacks[expr[1]][-1],expr[2]),2),
+	'P': (lambda expr: stack_push(stacks[expr[1]].pop(),expr[2]),2),
 	'i': (input_func, 0),
-	'w': (noop, 1),
-	'W': (noop, 1),
-	'f': (noop, 1),
+	'w': (lambda expr: cond_jump(lambda e:e==0,expr), 1),
+	'W': (lambda expr: cond_jump(lambda e:e!=0,expr), 1),
+	'f': (lambda expr: cond_jump(lambda e:e==0,expr), 1),
 	'F': (noop, 0),
 	'g': (goto, 1),
 	'.': (noop, 1),
+	'q': (exit, 0),
 }
 
 if __name__ == "__main__":
@@ -127,37 +126,11 @@ if __name__ == "__main__":
 		pars = s[in_ptr:in_ptr+ops[c][1]+1]
 		if "-d" in argv:
 			print(c,pars,stacks,in_ptr)
-		match c:
-			# operators
-			case c if c in "+-*/":
-				stacks['\"'].append(ops[c][0](expr_eval(pars),expr_eval(pars[::2])))
+		if c in ops:
+			ops[c][0](pars)
 
-			# stack operations
-			case c if c in "pP":
-				stack_push(ops[c][0](s[in_ptr+1]), s[in_ptr+2])
-				# ops[c][0](pars)
-
-			# oO - output
-			# i - input
-			# F - endif
-			# . comment
-			case c if c in "ioOF.g":
-				ops[c][0](pars)
-
-			# while loops, and if
-			case c if c in 'wf':
-				if expr_eval(pars) == 0:
-					in_ptr = jumps[in_ptr]+1
-			case 'W':
-				if expr_eval(pars) != 0:
-					in_ptr = jumps[in_ptr]-ops[c][1]-1
-
-			# end program
-			case 'q':
-				break
-
-			case _:
-				print(f"unknown command {ord(c)} {c}")
-				exit(1)
+		else:
+			print(f"unknown command {ord(c)} {c}")
+			exit(1)
 
 		in_ptr += ops[c][1]+1
