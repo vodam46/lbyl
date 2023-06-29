@@ -11,3 +11,6 @@ fi
 if ! echo "1" | timeout 1s ./main.py truthmachine | grep -i "11" > /dev/null; then
 	echo "truthmachine wrong"
 fi
+if ! ./main.py goto_test | grep -i "^ $" > /dev/null; then
+	echo "goto wrong"
+fi

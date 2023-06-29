@@ -19,7 +19,6 @@ implemented commands:
 	oO
 	i
 	+-*/
-	n
 	q
 	wW
 	fF
@@ -67,16 +66,16 @@ def parse(s):
 		i += ops[c][1]+1
 	return s
 
-def stack_push(stack,num): # expr: str
+def stack_push(num,stack): # expr: str
 	if stack not in stacks: # expr[0]
 		stacks[stack] = []
 	stacks[stack].append(num)
 
 def expr_eval(expr: str):
-	if expr not in "0123456789":
-		out = int(stacks[expr].pop())
+	if expr[1] not in "0123456789":
+		out = int(stacks[expr[1]].pop())
 	else:
-		out = int(expr)
+		out = int(expr[1])
 	return out
 
 def input_func(expr: str):
@@ -84,26 +83,30 @@ def input_func(expr: str):
 	if input_str == "":
 		input_str = stdin.readline()
 	if input_str != "":
-		stack_push('\"', ord(input_str[0]))
+		stacks["\""].append(ord(input_str[0]))
 		input_str = input_str[1:]
 	else:
-		stack_push('\"', 0)
+		stacks["\""].append(0)
+
+def goto(expr: str):
+	global in_ptr
+	in_ptr = expr_eval(expr)
 
 ops: dict[str,tuple[Callable,int]] = {
 	'+': (operator.add,2),
 	'-': (operator.sub,2),
 	'*': (operator.mul,2),
 	'/': (operator.truediv,2),
-	'o': (lambda expr: print(chr(expr_eval(expr[1])),end=""),1),
-	'O': (lambda expr: print(int(expr_eval(expr[1])),end=""),1),
-	'p': (lambda stack:stacks[stack][-1],2),
-	'P': (lambda stack:stacks[stack].pop(),2),
+	'o': (lambda expr: print(chr(expr_eval(expr)),end=""),1),
+	'O': (lambda expr: print(int(expr_eval(expr)),end=""),1),
+	'p': (lambda expr:stacks[expr[0]][-1],2),
+	'P': (lambda expr:stacks[expr[0]].pop(),2),
 	'i': (input_func, 0),
 	'w': (noop, 1),
 	'W': (noop, 1),
 	'f': (noop, 1),
 	'F': (noop, 0),
-	'g': (noop, 1),
+	'g': (goto, 1),
 	'.': (noop, 1),
 }
 
@@ -127,29 +130,27 @@ if __name__ == "__main__":
 		match c:
 			# operators
 			case c if c in "+-*/":
-				stacks['\"'].append(ops[c][0](expr_eval(s[in_ptr+1]),expr_eval(s[in_ptr+2])))
+				stacks['\"'].append(ops[c][0](expr_eval(pars),expr_eval(pars[::2])))
 
 			# stack operations
 			case c if c in "pP":
-				stack_push(s[in_ptr+2], ops[c][0](s[in_ptr+1]))
+				stack_push(ops[c][0](s[in_ptr+1]), s[in_ptr+2])
+				# ops[c][0](pars)
 
 			# oO - output
 			# i - input
 			# F - endif
 			# . comment
-			case c if c in "ioOF.":
+			case c if c in "ioOF.g":
 				ops[c][0](pars)
 
 			# while loops, and if
 			case c if c in 'wf':
-				if expr_eval(s[in_ptr+1]) == 0:
+				if expr_eval(pars) == 0:
 					in_ptr = jumps[in_ptr]+1
 			case 'W':
-				if expr_eval(s[in_ptr+1]) != 0:
+				if expr_eval(pars) != 0:
 					in_ptr = jumps[in_ptr]-ops[c][1]-1
-
-			case 'g':
-				in_ptr = expr_eval(s[in_ptr+1])
 
 			# end program
 			case 'q':
