@@ -3,10 +3,12 @@
 TODO
 rename commands
 move all repeatable logic into functions
+- expr as function input
 rewrite in C
 get EOF for input
 fix while loops
 typehint everything
+test script
 
 unified design choices
  - always pop
@@ -33,30 +35,13 @@ import operator
 from typing import Callable
 
 in_ptr: int = 0
-input_str = ""
+input_str: str = ""
 stacks: dict[str,list[int]] = {
 	'\"': [],	# default stack
 }
 
 def noop():
 	pass
-ops: dict[str,tuple[Callable,int]] = {
-	'+': (operator.add,2),
-	'-': (operator.sub,2),
-	'*': (operator.mul,2),
-	'/': (operator.truediv,2),
-	'o': (chr,1),
-	'O': (int,1),
-	'p': (lambda stack:stacks[stack][-1],2),
-	'P': (lambda stack:stacks[stack].pop(),2),
-	'i': (noop, 0),
-	'w': (noop, 1),
-	'W': (noop, 1),
-	'f': (noop, 1),
-	'F': (noop, 0),
-	'g': (noop, 1),
-	'.': (noop, 1),
-}
 
 jumps: dict[int,int] = {}
 
@@ -82,8 +67,8 @@ def parse(s):
 		i += ops[c][1]+1
 	return s
 
-def stack_push(stack,num):
-	if stack not in stacks:
+def stack_push(stack,num): # expr: str
+	if stack not in stacks: # expr[0]
 		stacks[stack] = []
 	stacks[stack].append(num)
 
@@ -93,6 +78,34 @@ def expr_eval(expr: str):
 	else:
 		out = int(expr)
 	return out
+
+def input_func(expr: str):
+	global input_str
+	if input_str == "":
+		input_str = stdin.readline()
+	if input_str != "":
+		stack_push('\"', ord(input_str[0]))
+		input_str = input_str[1:]
+	else:
+		stack_push('\"', 0)
+
+ops: dict[str,tuple[Callable,int]] = {
+	'+': (operator.add,2),
+	'-': (operator.sub,2),
+	'*': (operator.mul,2),
+	'/': (operator.truediv,2),
+	'o': (lambda expr: print(chr(expr_eval(expr[1])),end=""),1),
+	'O': (lambda expr: print(int(expr_eval(expr[1])),end=""),1),
+	'p': (lambda stack:stacks[stack][-1],2),
+	'P': (lambda stack:stacks[stack].pop(),2),
+	'i': (input_func, 0),
+	'w': (noop, 1),
+	'W': (noop, 1),
+	'f': (noop, 1),
+	'F': (noop, 0),
+	'g': (noop, 1),
+	'.': (noop, 1),
+}
 
 if __name__ == "__main__":
 	if len(argv) > 1:
@@ -108,8 +121,9 @@ if __name__ == "__main__":
 
 	while in_ptr < len(s):
 		c = s[in_ptr]
+		pars = s[in_ptr:in_ptr+ops[c][1]+1]
 		if "-d" in argv:
-			print(c,s[in_ptr:in_ptr+ops[c][1]+1],stacks)
+			print(c,pars,stacks,in_ptr)
 		match c:
 			# operators
 			case c if c in "+-*/":
@@ -119,27 +133,20 @@ if __name__ == "__main__":
 			case c if c in "pP":
 				stack_push(s[in_ptr+2], ops[c][0](s[in_ptr+1]))
 
-			# output
-			case c if c in "oO":
-				print(ops[c][0](expr_eval(s[in_ptr+1])), end="")
-
-			# input
-			case 'i':
-				if input_str == "":
-					input_str = stdin.readline()
-				if input_str != "":
-					stack_push('\"', ord(input_str[0]))
-					input_str = input_str[1:]
-				else:
-					stack_push('\"', 0)
+			# oO - output
+			# i - input
+			# F - endif
+			# . comment
+			case c if c in "ioOF.":
+				ops[c][0](pars)
 
 			# while loops, and if
 			case c if c in 'wf':
 				if expr_eval(s[in_ptr+1]) == 0:
-					in_ptr = jumps[in_ptr]
+					in_ptr = jumps[in_ptr]+1
 			case 'W':
 				if expr_eval(s[in_ptr+1]) != 0:
-					in_ptr = jumps[in_ptr]
+					in_ptr = jumps[in_ptr]-ops[c][1]-1
 
 			case 'g':
 				in_ptr = expr_eval(s[in_ptr+1])
@@ -147,12 +154,6 @@ if __name__ == "__main__":
 			# end program
 			case 'q':
 				break
-
-			# noop
-			case c if c in 'F':
-				pass
-			case '.':
-				pass
 
 			case _:
 				print(f"unknown command {ord(c)} {c}")
