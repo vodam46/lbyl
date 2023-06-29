@@ -3,6 +3,7 @@ TODO
 rename commands
 move all repeatable logic into functions
 rewrite in C
+get EOF for input
 
 unified design choices
  - always pop
@@ -104,16 +105,11 @@ if __name__ == "__main__":
 		match c:
 			# operators
 			case c if c in "+-*/":
-				num = ops[c][0](expr_eval(s[in_ptr+1]),expr_eval(s[in_ptr+2]))
-				stacks['\"'].append(num)
+				stacks['\"'].append(ops[c][0](expr_eval(s[in_ptr+1]),expr_eval(s[in_ptr+2])))
 
 			# stack operations
 			case c if c in "pP":
-				if c == 'p':
-					num = stacks[s[in_ptr+1]][-1]
-				else:
-					num = stacks[s[in_ptr+1]].pop()
-				stack_push(s[in_ptr+2], num)
+				stack_push(s[in_ptr+2], ops[c][0](s[in_ptr+1]))
 
 			# output
 			case c if c in "oO":
