@@ -1,0 +1,47 @@
+a language executed on a letter by letter basis, each command is a single
+letter followed by a set number of parameters
+(very inspired by vim)
+
+all results of computations go to a default stack - "
+
+as many stacks as symbols
+
+formatting style:
+cp - command c, parameters p
+
+stack operations:
+	pft - push - copies from f to t
+	Pft - pop - moves from f to t
+
+io:
+	oc - out - char c
+	On - out - number n
+	i - in
+
+
+arithmetic operators
+lisp style - first operation, then the variables
++lr - l+r
+-lr - l-r
+*lr - l*r
+/lr - l/r
+
+numbers - 013456789 - single digit
+
+if
+fe - if e != 0
+F - endif
+
+loop
+we - while start - if e != 0
+We - while end - return to matching w if e != 0
+
+gn - goto n
+
+q - quit
+
+functions
+d - define
+D - end definiton
+r - return
+c - call
