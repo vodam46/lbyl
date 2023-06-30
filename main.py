@@ -2,7 +2,7 @@
 """"
 TODO
 rename commands
-rewrite in C
+rewrite in C (?)
 typehint everything
 
 implemented commands:
@@ -21,7 +21,6 @@ not implemented commands:
 """
 
 from sys import argv, stdin
-import operator
 from typing import Callable
 
 in_ptr: int = 0
@@ -30,19 +29,20 @@ stacks: dict[str,list[int]] = {
 	'\"': [],	# default stack
 }
 
-def noop():
+def noop(expr:str) -> None:
 	pass
 
 jumps: dict[int,int] = {}
 
-def parse(s):
+def parse(s: str) -> str:
 	s = ''.join(c for c in s if c not in  " \n\t")
 
-	while_arr = []
-	if_arr = []
-	i = 0
+	while_arr: list[int] = []
+	if_arr: list[int] = []
+	i: int = 0
+	jump: int = 0
 	while i < len(s):
-		c = s[i]
+		c: str = s[i]
 		if c == 'w':
 			while_arr.append(i)
 		elif c == 'W':
@@ -57,18 +57,19 @@ def parse(s):
 		i += ops[c][1]+1
 	return s
 
-def stack_push(num,stack): # expr: str
-	if stack not in stacks: # expr[0]
-		stacks[stack] = []
+def stack_push(num: int,stack: str):
+	if stack not in stacks:
+		stacks[stack] = [num]
+		return
 	stacks[stack].append(num)
 
 def expr_eval(expr: str):
 	if "-d" in argv:
 		print("expr:",expr)
-	if expr not in "0123456789":
-		out = int(stacks[expr].pop())
-	else:
+	if expr in "0123456789":
 		out = int(expr)
+	else:
+		out = int(stacks[expr].pop())
 	return out
 
 def input_func(expr: str):
@@ -90,7 +91,7 @@ def goto(expr: str):
 	global in_ptr
 	in_ptr = expr_eval(expr[1])
 
-ops: dict[str,tuple[Callable,int]] = {
+ops: dict[str,tuple[Callable[[str],None],int]] = {
 	'+': (lambda expr: stacks['\"'].append(expr_eval(expr[1])+expr_eval(expr[2])),2),
 	'-': (lambda expr: stacks['\"'].append(expr_eval(expr[1])-expr_eval(expr[2])),2),
 	'*': (lambda expr: stacks['\"'].append(expr_eval(expr[1])*expr_eval(expr[2])),2),
@@ -106,10 +107,11 @@ ops: dict[str,tuple[Callable,int]] = {
 	'F': (noop, 0),
 	'g': (goto, 1),
 	'.': (noop, 1),
-	'q': (exit, 0),
+	'q': (lambda expr: exit(0), 0),
 }
 
 if __name__ == "__main__":
+	s: str = ""
 	if len(argv) > 1:
 		with open(argv[1]) as f:
 			s = f.read()[:-1]
@@ -122,8 +124,8 @@ if __name__ == "__main__":
 		print(s)
 
 	while in_ptr < len(s):
-		c = s[in_ptr]
-		pars = s[in_ptr:in_ptr+ops[c][1]+1]
+		c: str = s[in_ptr]
+		pars: str = s[in_ptr:in_ptr+ops[c][1]+1]
 		if "-d" in argv:
 			print(c,pars,stacks,in_ptr)
 		if c in ops:
